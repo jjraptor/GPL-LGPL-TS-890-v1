@@ -1,0 +1,175 @@
+--- tslib-git/src/ts_open.c	2011-07-29 14:39:45.000000000 +0900
++++ tslib-build/src/ts_open.c	2012-04-10 09:22:36.940580461 +0900
+@@ -17,6 +17,7 @@
+ #include <unistd.h>
+ #endif
+ #include <sys/fcntl.h>
++#include <termios.h>
+ 
+ #include "tslib-private.h"
+ 
+@@ -27,6 +28,8 @@
+ 	struct tsdev *ts;
+ 	int flags = O_RDWR;
+ 
++	struct termios tty;
++
+ 	if (nonblock)
+ 		flags |= O_NONBLOCK;
+ 
+@@ -43,8 +46,30 @@
+ 			flags = nonblock ? (O_RDONLY | O_NONBLOCK) : O_RDONLY;
+ 			ts->fd = open(name, flags);
+ 		}
+-		if (ts->fd == -1)
++		if (ts->fd == -1) {
+ 			goto free;
++		}
++		else if( (0 == strcmp(name, "/dev/ttyO0"))
++			|| (0 == strcmp(name, "/dev/ttyO1"))
++			|| (0 == strcmp(name, "/dev/ttyO2"))
++			|| (0 == strcmp(name, "/dev/ttyO3")) ) { 
++			if(-1 == tcgetattr(ts->fd, &tty)) {
++				perror("tcgetattr:");
++			}
++			tty.c_iflag = IGNBRK | IGNPAR;
++			tty.c_oflag = 0;
++			tty.c_lflag = 0;
++			tty.c_line = 0;
++			tty.c_cc[VTIME] = 0;
++			tty.c_cc[VMIN] = 1;
++			tty.c_cflag = CS8 | CREAD | CLOCAL | HUPCL;
++			tty.c_cflag |= B115200;
++			if(-1 == tcsetattr(ts->fd, TCSAFLUSH, &tty)) {
++				perror("tcsetattr");
++			}
++		}
++		else {
++		}
+ 	}
+ 
+ 	return ts;
+--- tslib-git/src/ts_close.c	2012-04-02 11:09:42.675518615 +0900
++++ tslib-build/src/ts_close.c	2012-06-16 12:54:18.611292147 +0900
+@@ -14,24 +14,12 @@
+ #ifdef HAVE_UNISTD_H
+ #include <unistd.h>
+ #endif
+-#include <dlfcn.h>
+ 
+ #include "tslib-private.h"
+ 
+ int ts_close(struct tsdev *ts)
+ {
+-	void *handle;
+ 	int ret;
+-	struct tslib_module_info *info, *prev;
+-
+-	for(info = ts->list, prev = info;
+-	    info != NULL;
+-	    info = prev->next, prev = info) {
+-		handle = info->handle;
+-		info->ops->fini(info);
+-		if (handle)
+-			dlclose(handle);
+-	}
+ 
+ 	ret = close(ts->fd);
+ 	free(ts);
+--- tslib-git/plugins/touchkit-raw.c	2011-07-29 14:39:45.000000000 +0900
++++ tslib-build/plugins/touchkit-raw.c	2012-04-10 09:22:36.939518762 +0900
+@@ -30,13 +30,17 @@
+ */
+ 
+ enum {
+-	PACKET_SIZE = 5,
++	PACKET_SIZE = 8,
+ 	BUFFER_SIZE = 100,
+-	PACKET_SIGNATURE = 0x81
++	PACKET_START_SIGNATURE1 = 0x50,
++	PACKET_START_SIGNATURE2 = 0x52,
++	PACKET_END_SIGNATURE = 0x0D
+ };
+ 
+ /* Is is a start of packet ? */
+-#define IsStart(x) (((x)|1) == PACKET_SIGNATURE)
++#define IsStart1(x) ((x) == PACKET_START_SIGNATURE1)
++#define IsStart2(x) ((x) == PACKET_START_SIGNATURE2)
++#define IsEnd(x) ((x) == PACKET_END_SIGNATURE)
+ 
+ static int touchkit_init(int dev)
+ {
+@@ -50,7 +54,7 @@
+ 	tty.c_cc[VTIME] = 0;
+ 	tty.c_cc[VMIN] = 1;
+ 	tty.c_cflag = CS8 | CREAD | CLOCAL | HUPCL;
+-	tty.c_cflag |= B9600;
++	tty.c_cflag |= B115200;
+ 	tcsetattr(dev, TCSAFLUSH, &tty);
+ 
+ 	return 1;
+@@ -83,7 +87,7 @@
+ 	int p;
+ 	int total = 0;
+ 	for (p = 0; p < pos; ++p)
+-		if (IsStart(buffer[p])) {
++		if (IsStart1(buffer[p]) || IsStart2(buffer[p])) {
+ 			/* we have enough data for a packet ? */
+ 			if (p + PACKET_SIZE > pos) {
+ 				if (p > 0) {
+@@ -101,30 +105,24 @@
+ 			unsigned char *data = buffer + p;
+ 
+ 			/* check if all bytes are ok (no 'start' embedded) */
+-			int q;
+-			for (q = 1; q < PACKET_SIZE; ++q)
+-				if (IsStart(buffer[p + q]))
+-					break;
+-			if (q < PACKET_SIZE) {
++			if (!IsEnd(buffer[p + PACKET_SIZE - 1])) {
+ #ifdef DEBUG
+ 				fprintf(stderr,
+-					"Start found within packet [%X %X %X %X %X] ignore %d bytes\n",
++					"End can't be found within packet [%02X %02X %02X %02X %02X %02X %02X %02X] p=%d, pos=%d\n",
+ 					data[0], data[1], data[2], data[3],
+-					data[4], q);
++					data[4], data[5], data[6], data[7], p, pos );
+ #endif
+-				p += q - 1;
+ 				continue;
+ 			}
+ 			/* now let's decode it */
+-			samp->x = (data[1] & 0x000F) << 7 | (data[2] & 0x007F);
+-			samp->y =
+-			    ((data[3] & 0x000F) << 7 | (data[4] & 0x007F));
+-			samp->pressure = (data[0] & 1) ? 200 : 0;
++			samp->x		= (data[1] & 0x00FF) | (data[2] & 0x00FF) << 8;
++			samp->y		= (data[3] & 0x00FF) | (data[4] & 0x00FF) << 8;
++			samp->pressure	= (data[5] & 0x00FF) | (data[6] & 0x00FF) << 8;
+ 			gettimeofday(&samp->tv, NULL);
+ #ifdef DEBUG
+ 			fprintf(stderr,
+-				"RAW -------------------------> data=[%X %X %X %X %X]  x=%d y=%d pres=%d\n",
+-				data[0], data[1], data[2], data[3], data[4],
++				"RAW -------------------------> data=[%02X %02X %02X %02X %02X %02X %02X %02X]  x=%d y=%d pres=%d\n",
++				data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7],
+ 				samp->x, samp->y, samp->pressure);
+ #endif
+ 			samp++;
+@@ -144,7 +142,7 @@
+ 	.read = touchkit_read,
+ };
+ 
+-TSAPI struct tslib_module_info *mod_init(struct tsdev *dev, const char *params)
++TSAPI struct tslib_module_info *touchkit_mod_init(struct tsdev *dev, const char *params)
+ {
+ 	struct tslib_module_info *m;
+ 
+@@ -155,3 +153,7 @@
+ 	m->ops = &touchkit_ops;
+ 	return m;
+ }
++
++#ifndef TSLIB_STATIC_TOUCHKIT_MODULE
++	TSLIB_MODULE_INIT(touchkit_mod_init);
++#endif

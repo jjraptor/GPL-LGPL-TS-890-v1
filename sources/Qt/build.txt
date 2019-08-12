@@ -1,0 +1,14 @@
+Install Directory(toolchain)  : /opt/ti-sdk-am3517-evm-05.04.00.00
+Install Directory(GraphicsSDK): /opt/Graphics_SDK_4_06_00_02
+
+$ tar zxf qt-everywhere-opensource-src-4.8.2.tar.gz
+
+$ cd qt-everywhere-opensource-src-4.8.2
+
+$ patch -p1 < ../qt.patch
+
+$ source ../pkg-config-env
+
+$ ./configure -opensource -fast -no-largefile -no-qt3support -no-xmlpatterns -no-multimedia -no-audio-backend -no-phonon -no-phonon-backend -svg -webkit -no-javascript-jit -no-scripttools -declarative -D QT_NO_QWS_CURSOR -D QT_QWS_CLIENTBLIT -system-zlib -no-libtiff -system-libpng -no-libmng -no-libjpeg -no-openssl -nomake demos -nomake examples -no-cups -dbus -reduce-relocations -xplatform qws/linux-TIarmv7-sgx-g++ -embedded arm -depths 16,24,32 -opengl es1 -qt-gfx-linuxfb -qt-gfx-vnc -plugin-gfx-powervr -qt-mouse-tslib -qt-kbd-linuxinput -force-pkg-config
+
+$ make

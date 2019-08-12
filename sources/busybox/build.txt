@@ -1,0 +1,7 @@
+$ tar jxf busybox-1.19.4.tar.bz2
+
+$ cp .config busybox-1.19.4
+
+$ cd busybox-1.19.4
+
+$ make ARCH=arm

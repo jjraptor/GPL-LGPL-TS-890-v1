@@ -1,0 +1,5 @@
+$ tar zxf x-loader_20180712.tar.gz
+
+$ make ARCH=arm CROSS_COMPILE=arm-none-linux-gnueabi- am3517evm_falcon_config
+
+$ make ARCH=arm CROSS_COMPILE=arm-none-linux-gnueabi-

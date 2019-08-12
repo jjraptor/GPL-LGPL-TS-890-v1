@@ -1,0 +1,32 @@
+Install directory: /opt/Graphics_SDK_4_06_00_02
+
+$ su
+
+# ./Graphics_SDK_setuplinux_4_06_00_02.bin
+
+# cd /opt/Graphics_SDK_4_06_00_02
+
+# vi Rules.make
+
+----------------------------------------------------------------------------------
+################# FIELDS MODIFIABLE BY THE USER ###############################
+############### All the fields below are mandatory ############################
+
+# Set home area (ex /home/user/)
+HOME=/opt
+
+# Set Toolchain path (ex /home/user/toolchain/arago-2011.09/armv7a)
+CSTOOL_DIR=/opt/ti-sdk-am3517-evm-05.04.00.00/linux-devkit
+
+# Set Tool chain prefix (ex arm-arago-linux-gnueabi- )
+CSTOOL_PREFIX=arm-arago-linux-gnueabi-
+
+# Set kernel installation path ( ex /home/user/linux-04.00.01.13 )
+KERNEL_INSTALL_DIR=/your/path/linux-omap3
+
+# Set Target filesystem path ( ex /home/user/targetfs )
+TARGETFS_INSTALL_DIR=/your/path/
+----------------------------------------------------------------------------------
+
+# make all_km OMAPES=3.x
+

@@ -1,0 +1,21 @@
+$ tar jxf build.tar.bz2
+
+$ cp arago/setenv.sample arago/setenv
+
+$ cp arago/conf/local.conf.sample arago/conf/local.conf
+
+$ source arago/setenv
+
+$ MACHINE=am3517-evm TOOLCHAIN_BRAND=arago bitbake arago-base-image
+
+$ MACHINE=am3517-evm TOOLCHAIN_BRAND=arago bitbake ntp
+
+$ MACHINE=am3517-evm TOOLCHAIN_BRAND=arago bitbake hal
+
+$ MACHINE=am3517-evm TOOLCHAIN_BRAND=arago bitbake fbset
+
+$ MACHINE=am3517-evm TOOLCHAIN_BRAND=arago bitbake dosfstools
+
+$ MACHINE=am3517-evm TOOLCHAIN_BRAND=arago bitbake tzdata
+
+$ MACHINE=am3517-evm TOOLCHAIN_BRAND=arago bitbake e2fsprogs

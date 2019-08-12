@@ -1,0 +1,10 @@
+$ tar jxf kernel_20180405.tar.bz2
+
+$ cd kernel
+
+$ make ARCH=arm ts990_falcon_defconfig
+
+$ make ARCH=arm zImage
+
+$ make ARCH=arm modules
+

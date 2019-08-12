@@ -1,0 +1,3 @@
+$ ./configure --prefix=INSTALL_DIR --host=arm-linux CC=arm-arago-linux-gnueabi-gcc
+
+$ make

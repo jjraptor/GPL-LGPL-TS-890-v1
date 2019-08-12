@@ -1,0 +1,64 @@
+--- sed-4.1.5_orig/lib/getline.c	2005-06-21 23:09:37.000000000 +0900
++++ sed-4.1.5/lib/getline.c	2012-06-18 17:31:09.091694589 +0900
+@@ -31,7 +31,7 @@
+    null terminator), or -1 on error or EOF.  */
+ 
+ size_t
+-getline (lineptr, n, stream)
++getline_kenwood (lineptr, n, stream)
+      char **lineptr;
+      size_t *n;
+      FILE *stream;
+--- sed-4.1.5_orig/lib/utils.c	2005-06-21 23:09:40.000000000 +0900
++++ sed-4.1.5/lib/utils.c	2012-06-18 17:31:36.163668180 +0900
+@@ -245,7 +245,7 @@
+ {
+   int result;
+   if (!ferror (stream))
+-    result = getline (text, buflen, stream);
++    result = getline_kenwood (text, buflen, stream);
+ 
+   if (ferror (stream))
+     panic (_("read error on %s: %s"), utils_fp_name(stream), strerror(errno));
+--- sed-4.1.5_orig/testsuite/tst-boost.c	2005-06-21 23:10:02.000000000 +0900
++++ sed-4.1.5/testsuite/tst-boost.c	2012-06-18 17:32:05.650661473 +0900
+@@ -103,7 +103,7 @@
+       return 1;
+     }
+ 
+-  while ((len = getline (&line, &line_len, f)) > 0)
++  while ((len = getline_kenwood (&line, &line_len, f)) > 0)
+     {
+       char *p, *q;
+       int i;
+--- sed-4.1.5_orig/testsuite/tst-pcre.c	2005-06-21 23:10:02.000000000 +0900
++++ sed-4.1.5/testsuite/tst-pcre.c	2012-06-18 17:32:30.770662153 +0900
+@@ -61,7 +61,7 @@
+       return 1;
+     }
+ 
+-  if ((len = getline (&line, &line_len, f)) <= 0
++  if ((len = getline_kenwood (&line, &line_len, f)) <= 0
+       || strncmp (line, "# PCRE", 6) != 0)
+     {
+       fprintf (stderr, "Not a PCRE test file\n");
+@@ -72,7 +72,7 @@
+ 
+   linenum = 1;
+ 
+-  while ((len = getline (&line, &line_len, f)) > 0)
++  while ((len = getline_kenwood (&line, &line_len, f)) > 0)
+     {
+       char *p;
+       unsigned long num;
+--- sed-4.1.5_orig/testsuite/tst-rxspencer.c	2005-06-21 23:10:03.000000000 +0900
++++ sed-4.1.5/testsuite/tst-rxspencer.c	2012-06-18 17:32:52.418663773 +0900
+@@ -433,7 +433,7 @@
+       return 1;
+     }
+ 
+-  while ((len = getline (&line, &line_len, f)) > 0)
++  while ((len = getline_kenwood (&line, &line_len, f)) > 0)
+     {
+       char *pattern, *flagstr, *string, *expect, *matches, *p;
+       int cflags = REG_EXTENDED, eflags = 0, try_bre_ere = 0;
